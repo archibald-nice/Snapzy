@@ -103,13 +103,13 @@ final class RecordingAnnotationStateTests: XCTestCase {
   /// recording window, its key event must still select the recording tool.
   @MainActor
   func testAnnotationToolbarKeyDown_switchesToolWhileShortcutModeIsActive() throws {
+    state.isAnnotationEnabled = true
     let toolbar = RecordingAnnotationToolbarWindow(annotationState: state)
     defer {
       toolbar.close()
       toolbar.contentView = nil
     }
 
-    state.isAnnotationEnabled = true
     state.isShortcutModeActive = true
     let event = try XCTUnwrap(NSEvent.keyEvent(
       with: .keyDown,
@@ -131,13 +131,13 @@ final class RecordingAnnotationStateTests: XCTestCase {
 
   @MainActor
   func testAnnotationToolbarKeyDown_usesCharactersIgnoringModifiersForControlShortcut() throws {
+    state.isAnnotationEnabled = true
     let toolbar = RecordingAnnotationToolbarWindow(annotationState: state)
     defer {
       toolbar.close()
       toolbar.contentView = nil
     }
 
-    state.isAnnotationEnabled = true
     state.isShortcutModeActive = true
     let event = try XCTUnwrap(NSEvent.keyEvent(
       with: .keyDown,
