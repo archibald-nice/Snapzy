@@ -158,16 +158,7 @@ final class RecordingAnnotationStateTests: XCTestCase {
   }
 
   @MainActor
-  func testAnnotationOverlayKeyMonitor_routesLocalKeyDown() throws {
-    let overlay = RecordingAnnotationOverlayWindow(
-      recordingRect: CGRect(x: 0, y: 0, width: 320, height: 180),
-      annotationState: state
-    )
-    defer {
-      overlay.close()
-      overlay.contentView = nil
-    }
-
+  func testSelectTool_routesShortcutWithoutAppKitEventDispatch() throws {
     state.isAnnotationEnabled = true
     state.isShortcutModeActive = true
     let event = try XCTUnwrap(NSEvent.keyEvent(
@@ -175,7 +166,7 @@ final class RecordingAnnotationStateTests: XCTestCase {
       location: .zero,
       modifierFlags: [.shift],
       timestamp: 0,
-      windowNumber: overlay.windowNumber,
+      windowNumber: 0,
       context: nil,
       characters: "r",
       charactersIgnoringModifiers: "r",
@@ -183,7 +174,7 @@ final class RecordingAnnotationStateTests: XCTestCase {
       keyCode: 15 // R
     ))
 
-    NSApp.sendEvent(event)
+    XCTAssertTrue(state.selectTool(for: event))
 
     XCTAssertEqual(state.selectedTool, .rectangle)
   }
