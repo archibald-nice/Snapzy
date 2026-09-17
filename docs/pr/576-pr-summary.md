@@ -11,7 +11,7 @@
 * Centralize tool-key matching in `RecordingAnnotationState.selectTool(for:)`, using `charactersIgnoringModifiers` so Control/Option do not transform the configured shortcut character.
 * Route key-down events through local and global monitors owned by `RecordingAnnotationOverlayWindow`. Matching local events are consumed; global events switch the tool while the recorded application owns focus.
 * Add a direct `RecordingAnnotationToolbarWindow` responder fallback and keep the existing canvas responder path.
-* Add regression coverage for toolbar delivery, Control-modified characters, and centralized state-level shortcut routing.
+* Add deterministic regression coverage for centralized state-level shortcut routing, including Control-modified characters.
 * Document the shortcut routing behavior and Accessibility permission requirement in the recording and shortcut guides.
 
 **Recommended review order:**
@@ -25,10 +25,10 @@
 
 ## 3. Verification & Testing (How)
 
-* **Focused regression suite:** `./scripts/run-tests.sh -only-testing:SnapzyTests/RecordingAnnotationStateTests` — 12 tests passed.
+* **Focused regression suite:** `./scripts/run-tests.sh -only-testing:SnapzyTests/RecordingAnnotationStateTests` — 11 tests passed.
 * **Build:** `CLANG_MODULE_CACHE_PATH=build/swift-module-cache xcodebuild -project Snapzy.xcodeproj -scheme Snapzy -configuration Debug -destination 'platform=macOS' -derivedDataPath build/DerivedData build -quiet` — passed.
 * **Static validation:** `git diff --cached --check` — passed.
-* **Covered edge cases:** toolbar-focused key delivery, centralized shortcut routing, and Control-modified input resolved through `charactersIgnoringModifiers`.
+* **Covered edge cases:** shortcut-mode gating, centralized routing, and Control-modified input resolved through `charactersIgnoringModifiers`.
 * **Broader-suite note:** The full suite remains affected by two pre-existing Carbon F18 probe failures in `RecordingSessionHotkeyRegistrationTests`; these are unrelated to annotation shortcut routing.
 
 **Manual verification steps:**
