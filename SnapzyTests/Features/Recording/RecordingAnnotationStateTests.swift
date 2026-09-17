@@ -5,6 +5,7 @@
 //  Unit tests for RecordingAnnotationState append, clear, count limit, and cleanup.
 //
 
+import AppKit
 import CoreGraphics
 import XCTest
 @testable import Snapzy
@@ -96,5 +97,94 @@ final class RecordingAnnotationStateTests: XCTestCase {
   func testStartStopCleanupTimer_noCrash() {
     state.startCleanupTimer()
     state.stopCleanupTimer()
+  }
+
+  /// Regression for issue #576: when the annotation popover is the active
+  /// recording window, its key event must still select the recording tool.
+  @MainActor
+  func testAnnotationToolbarKeyDown_switchesToolWhileShortcutModeIsActive() throws {
+    let toolbar = RecordingAnnotationToolbarWindow(annotationState: state)
+    defer {
+      toolbar.close()
+      toolbar.contentView = nil
+    }
+
+    state.isAnnotationEnabled = true
+    state.isShortcutModeActive = true
+    let event = try XCTUnwrap(NSEvent.keyEvent(
+      with: .keyDown,
+      location: .zero,
+      modifierFlags: [.shift],
+      timestamp: 0,
+      windowNumber: toolbar.windowNumber,
+      context: nil,
+      characters: "r",
+      charactersIgnoringModifiers: "r",
+      isARepeat: false,
+      keyCode: 15 // R
+    ))
+
+    toolbar.keyDown(with: event)
+
+    XCTAssertEqual(state.selectedTool, .rectangle)
+  }
+
+  @MainActor
+  func testAnnotationToolbarKeyDown_usesCharactersIgnoringModifiersForControlShortcut() throws {
+    let toolbar = RecordingAnnotationToolbarWindow(annotationState: state)
+    defer {
+      toolbar.close()
+      toolbar.contentView = nil
+    }
+
+    state.isAnnotationEnabled = true
+    state.isShortcutModeActive = true
+    let event = try XCTUnwrap(NSEvent.keyEvent(
+      with: .keyDown,
+      location: .zero,
+      modifierFlags: [.control],
+      timestamp: 0,
+      windowNumber: toolbar.windowNumber,
+      context: nil,
+      characters: "\u{12}",
+      charactersIgnoringModifiers: "r",
+      isARepeat: false,
+      keyCode: 15 // R
+    ))
+
+    toolbar.keyDown(with: event)
+
+    XCTAssertEqual(state.selectedTool, .rectangle)
+  }
+
+  @MainActor
+  func testAnnotationOverlayKeyMonitor_routesLocalKeyDown() throws {
+    let overlay = RecordingAnnotationOverlayWindow(
+      recordingRect: CGRect(x: 0, y: 0, width: 320, height: 180),
+      annotationState: state
+    )
+    defer {
+      overlay.close()
+      overlay.contentView = nil
+    }
+
+    state.isAnnotationEnabled = true
+    state.isShortcutModeActive = true
+    let event = try XCTUnwrap(NSEvent.keyEvent(
+      with: .keyDown,
+      location: .zero,
+      modifierFlags: [.shift],
+      timestamp: 0,
+      windowNumber: overlay.windowNumber,
+      context: nil,
+      characters: "r",
+      charactersIgnoringModifiers: "r",
+      isARepeat: false,
+      keyCode: 15 // R
+    ))
+
+    NSApp.sendEvent(event)
+
+    XCTAssertEqual(state.selectedTool, .rectangle)
   }
 }
