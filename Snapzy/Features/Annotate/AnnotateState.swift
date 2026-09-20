@@ -3748,6 +3748,13 @@ final class AnnotateState: ObservableObject {
     }
     if let fillColor = colorUpdate.fillColor {
       annotations[index].properties.fillColor = fillColor
+      // The background fill only renders for label/callout presentations, so a
+      // colored fill on plain text would stay invisible. Promote it to a label.
+      if case .text = annotations[index].type,
+         fillColor != .clear,
+         annotations[index].properties.textPresentation == .plain {
+        annotations[index].properties.textPresentation = .label
+      }
     }
     if let cornerRadius = cornerRadius {
       annotations[index].properties.cornerRadius = max(0, cornerRadius)
@@ -4658,6 +4665,12 @@ final class AnnotateState: ObservableObject {
       if let fillColor = fillColor {
         properties.fillColor = fillColor
       }
+    }
+    if tool == .text,
+       let fillColor = fillColor,
+       fillColor != .clear,
+       properties.textPresentation == .plain {
+      properties.textPresentation = .label
     }
     if let cornerRadius = cornerRadius {
       properties.cornerRadius = max(0, cornerRadius)
