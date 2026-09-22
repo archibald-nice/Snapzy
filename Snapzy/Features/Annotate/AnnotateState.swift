@@ -108,6 +108,7 @@ final class AnnotateState: ObservableObject {
     var opacity: CGFloat
     var rotationDegrees: CGFloat
     var watermarkStyle: String
+    var textPresentation: String?
     var spotlightOpacity: CGFloat?
     var lineStyle: String?
 
@@ -126,6 +127,7 @@ final class AnnotateState: ObservableObject {
       self.opacity = properties.opacity
       self.rotationDegrees = properties.rotationDegrees
       self.watermarkStyle = properties.watermarkStyle.rawValue
+      self.textPresentation = properties.textPresentation.rawValue
       self.spotlightOpacity = properties.spotlightOpacity
       self.lineStyle = properties.lineStyle.rawValue
     }
@@ -142,7 +144,8 @@ final class AnnotateState: ObservableObject {
         opacity: opacity,
         rotationDegrees: rotationDegrees,
         watermarkStyle: WatermarkStyle(rawValue: watermarkStyle) ?? .single,
-        spotlightOpacity: spotlightOpacity ?? 0.5
+        spotlightOpacity: spotlightOpacity ?? 0.5,
+        textPresentation: textPresentation.flatMap { TextPresentation(rawValue: $0) } ?? .plain
       )
     }
   }
@@ -3694,6 +3697,19 @@ final class AnnotateState: ObservableObject {
       fillColor: fillColor
     )
 
+    // Re-selecting the current fill still matters for plain text: the
+    // promotion below is what makes the fill visible, so an equal fill value
+    // does not mean this update is a no-op.
+    let fillPromotesTextPresentation: Bool = {
+      guard let fillColor = colorUpdate.fillColor,
+            fillColor != .clear,
+            case .text = annotations[index].type,
+            annotations[index].properties.textPresentation == .plain else {
+        return false
+      }
+      return true
+    }()
+
     guard annotationPropertiesWillChange(
       annotations[index],
       strokeWidth: strokeWidth,
@@ -3706,7 +3722,7 @@ final class AnnotateState: ObservableObject {
       watermarkStyle: watermarkStyle,
       spotlightOpacity: spotlightOpacity,
       lineStyle: lineStyle
-    ) else { return }
+    ) || fillPromotesTextPresentation else { return }
 
     if recordsUndo {
       if let snapshot = propertySliderGestureUndoSnapshot {
@@ -5030,6 +5046,7 @@ final class AnnotateState: ObservableObject {
         properties.fillColor = .black
       }
       annotationToolProperties[.text] = properties
+      persistAnnotationToolProperties()
       return
     }
 
